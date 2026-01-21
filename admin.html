@@ -13,12 +13,12 @@ body{
 }
 .card{
   background:white;
-  max-width:500px;
+  max-width:600px;
   margin:auto;
   padding:20px;
   border-radius:12px;
 }
-input,button{
+input,select,button{
   width:100%;
   padding:10px;
   margin-top:10px;
@@ -28,6 +28,11 @@ button{
   color:white;
   border:none;
   border-radius:6px;
+  cursor:pointer;
+}
+.list{
+  margin-top:20px;
+  font-size:14px;
 }
 </style>
 </head>
@@ -41,14 +46,26 @@ button{
 
   <div id="panel" style="display:none">
     <hr>
-    <h3>Upload Timetable (CSV)</h3>
-    <input type="file" accept=".csv" onchange="uploadCSV(event)">
-    <p>CSV Columns: Section,Day,Start,End,Subject</p>
+    <h3>Add Timetable Entry</h3>
+
+    <input id="section" placeholder="Section (e.g. CSE-A)">
+    <select id="day">
+      <option>Monday</option><option>Tuesday</option><option>Wednesday</option>
+      <option>Thursday</option><option>Friday</option><option>Saturday</option>
+    </select>
+    <input id="start" type="time">
+    <input id="end" type="time">
+    <input id="subject" placeholder="Subject name">
+
+    <button onclick="addEntry()">Add / Save</button>
+
+    <div class="list" id="preview"></div>
   </div>
 </div>
 
 <script>
 const ADMIN_PASSWORD = "admin123";
+let timetable = JSON.parse(localStorage.getItem("timetable")) || {};
 
 function login(){
   if(document.getElementById("password").value === ADMIN_PASSWORD){
@@ -58,25 +75,43 @@ function login(){
   }
 }
 
-function uploadCSV(e){
-  const reader = new FileReader();
-  reader.onload = ev => {
-    const lines = ev.target.result.split("\n").slice(1);
-    const data = {};
+function addEntry(){
+  const section = section.value.trim();
+  const day = document.getElementById("day").value;
+  const start = document.getElementById("start").value;
+  const end = document.getElementById("end").value;
+  const subject = document.getElementById("subject").value.trim();
 
-    lines.forEach(l=>{
-      const [sec,day,start,end,sub] = l.split(",");
-      if(!sec) return;
-      data[sec] = data[sec] || {};
-      data[sec][day] = data[sec][day] || [];
-      data[sec][day].push({start,end,subject:sub});
-    });
+  if(!section || !start || !end || !subject){
+    alert("Fill all fields");
+    return;
+  }
 
-    localStorage.setItem("timetable", JSON.stringify(data));
-    alert("Timetable updated successfully!");
-  };
-  reader.readAsText(e.target.files[0]);
+  timetable[section] = timetable[section] || {};
+  timetable[section][day] = timetable[section][day] || [];
+
+  timetable[section][day].push({ start, end, subject });
+
+  localStorage.setItem("timetable", JSON.stringify(timetable));
+  showPreview();
+  alert("Saved! Student page updated.");
 }
+
+function showPreview(){
+  let html = "<h4>Current Data</h4>";
+  Object.keys(timetable).forEach(sec=>{
+    html += `<b>${sec}</b><br>`;
+    Object.keys(timetable[sec]).forEach(day=>{
+      timetable[sec][day].forEach(c=>{
+        html += `${day} | ${c.start}-${c.end} | ${c.subject}<br>`;
+      });
+    });
+    html += "<br>";
+  });
+  document.getElementById("preview").innerHTML = html;
+}
+
+showPreview();
 </script>
 
 </body>
