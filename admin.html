@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Admin Panel</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body{
+  font-family:Segoe UI,sans-serif;
+  background:#f1f5f9;
+  padding:40px;
+}
+.card{
+  background:white;
+  max-width:500px;
+  margin:auto;
+  padding:20px;
+  border-radius:12px;
+}
+input,button{
+  width:100%;
+  padding:10px;
+  margin-top:10px;
+}
+button{
+  background:#4f46e5;
+  color:white;
+  border:none;
+  border-radius:6px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="card">
+  <h2>Admin Login</h2>
+  <input id="password" type="password" placeholder="Admin Password">
+  <button onclick="login()">Login</button>
+
+  <div id="panel" style="display:none">
+    <hr>
+    <h3>Upload Timetable (CSV)</h3>
+    <input type="file" accept=".csv" onchange="uploadCSV(event)">
+    <p>CSV Columns: Section,Day,Start,End,Subject</p>
+  </div>
+</div>
+
+<script>
+const ADMIN_PASSWORD = "admin123";
+
+function login(){
+  if(document.getElementById("password").value === ADMIN_PASSWORD){
+    document.getElementById("panel").style.display="block";
+  }else{
+    alert("Wrong password");
+  }
+}
+
+function uploadCSV(e){
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const lines = ev.target.result.split("\n").slice(1);
+    const data = {};
+
+    lines.forEach(l=>{
+      const [sec,day,start,end,sub] = l.split(",");
+      if(!sec) return;
+      data[sec] = data[sec] || {};
+      data[sec][day] = data[sec][day] || [];
+      data[sec][day].push({start,end,subject:sub});
+    });
+
+    localStorage.setItem("timetable", JSON.stringify(data));
+    alert("Timetable updated successfully!");
+  };
+  reader.readAsText(e.target.files[0]);
+}
+</script>
+
+</body>
+</html>

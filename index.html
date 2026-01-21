@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Smart Campus Timetable</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body{
+  margin:0;
+  font-family:Segoe UI, sans-serif;
+  background:#0f172a;
+  color:#e5e7eb;
+}
+.container{
+  max-width:1000px;
+  margin:auto;
+  padding:20px;
+}
+.header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:10px;
+}
+.logo{
+  font-size:22px;
+  font-weight:bold;
+  color:#38bdf8;
+}
+select{
+  background:#020617;
+  color:#e5e7eb;
+  border:1px solid #1e293b;
+  padding:6px 10px;
+  border-radius:8px;
+}
+.card{
+  background:#020617;
+  border-radius:14px;
+  padding:20px;
+  margin-top:20px;
+}
+.title{
+  color:#38bdf8;
+  margin-bottom:10px;
+}
+.row{
+  display:grid;
+  grid-template-columns:120px 1fr;
+  padding:10px;
+  border-bottom:1px solid #1e293b;
+}
+.current{
+  background:#022c22;
+  border-radius:8px;
+}
+.empty{
+  text-align:center;
+  color:#94a3b8;
+  padding:20px;
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+  <div class="header">
+    <div class="logo">Smart Campus Timetable</div>
+    <select id="sectionSelect"></select>
+    <div id="time"></div>
+  </div>
+
+  <div class="card">
+    <h3 class="title">TODAY</h3>
+    <div id="timetable"></div>
+  </div>
+</div>
+
+<script>
+const data = JSON.parse(localStorage.getItem("timetable")) || {};
+const sectionSelect = document.getElementById("sectionSelect");
+
+function loadSections(){
+  const sections = Object.keys(data);
+  sectionSelect.innerHTML = sections.length
+    ? sections.map(s=>`<option>${s}</option>`).join("")
+    : `<option>No data</option>`;
+
+  const saved = localStorage.getItem("studentSection");
+  if(saved && sections.includes(saved)) sectionSelect.value = saved;
+}
+
+sectionSelect.onchange = () => {
+  localStorage.setItem("studentSection", sectionSelect.value);
+  render();
+};
+
+function render(){
+  const now = new Date();
+  const day = now.toLocaleString("en-US",{weekday:"long"});
+  const time = now.toTimeString().slice(0,5);
+  document.getElementById("time").innerText = `${day} • ${time}`;
+
+  const section = sectionSelect.value;
+  const today = data[section]?.[day] || [];
+
+  if(!today.length){
+    document.getElementById("timetable").innerHTML =
+      `<div class="empty">No classes today</div>`;
+    return;
+  }
+
+  document.getElementById("timetable").innerHTML =
+    today.map(c=>{
+      const active = time>=c.start && time<=c.end;
+      return `
+      <div class="row ${active?"current":""}">
+        <div>${c.start} - ${c.end}</div>
+        <div>${c.subject}</div>
+      </div>`;
+    }).join("");
+}
+
+loadSections();
+render();
+setInterval(render,30000);
+</script>
+</body>
+</html>
